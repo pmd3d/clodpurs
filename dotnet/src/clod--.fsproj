@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>clod__</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Types.fs" />
+    <Compile Include="CompilerError.fs" />
+    <Compile Include="Const.fs" />
+    <Compile Include="Ast.fs" />
+    <Compile Include="util\StringUtil.fs" />
+    <Compile Include="util\DisjointSets.fs" />
+
+    <Compile Include="util\Int8.fs" />
+    <Compile Include="util\Rounding.fs" />
+    <Compile Include="util\UniqueIds.fs" />
+    <Compile Include="util\ListUtil.fs" />
+    <Compile Include="util\ResultCE.fs" />
+    <Compile Include="Settings.fs" />
+    <Compile Include="TypeTable.fs" />
+    <Compile Include="util\TypeUtils.fs" />
+    <Compile Include="Initializers.fs" />
+    <Compile Include="Tokens.fs" />
+    <Compile Include="Assembly.fs" />
+    <Compile Include="RegSet.fs" />
+    <Compile Include="Symbols.fs" />
+    <Compile Include="Tacky.fs" />
+    <Compile Include="Cfg.fs" />
+    <Compile Include="TackyCfg.fs" />
+    <Compile Include="AsmCfg.fs" />
+    <Compile Include="BackwardDataflow.fs" />
+    <Compile Include="Bytes.fs" />
+    <Compile Include="ConstConvert.fs" />
+    <Compile Include="backend\AssemblySymbols.fs" />
+    <Compile Include="Emit.fs" />
+    <Compile Include="Stream.fs" />
+    <Compile Include="TokStream.fs" />
+    <Compile Include="Lex.fs" />
+    <Compile Include="Parse.fs" />
+    <Compile Include="TackyPrint.fs" />
+    <Compile Include="semantic_analysis\Resolve.fs" />
+    <Compile Include="semantic_analysis\LabelLoops.fs" />
+    <Compile Include="semantic_analysis\Typecheck.fs" />
+    <Compile Include="TackyGen.fs" />
+    <Compile Include="optimizations\Optimize.fs" />
+    <Compile Include="optimizations\AddressTaken.fs" />
+    <Compile Include="backend\Codegen.fs" />
+    <Compile Include="backend\Regalloc.fs" />
+    <Compile Include="backend\ReplacePseudos.fs" />
+    <Compile Include="backend\InstructionFixup.fs" />
+    <Compile Include="Compile.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0" />
+  </ItemGroup>
+
+</Project>
