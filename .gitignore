@@ -7,5 +7,5 @@ node_modules
 # Generated files
 .psci
 output
-
-dotnet/tests/bin
+dotnet/tests/bin/
+dotnet/tests/obj/

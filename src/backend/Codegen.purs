@@ -53,7 +53,7 @@ dblParamPassingRegs :: List AsmReg
 dblParamPassingRegs = XMM0 : XMM1 : XMM2 : XMM3 : XMM4 : XMM5 : XMM6 : XMM7 : Nil
 
 zero :: AsmOperand
-zero = Imm 0
+zero = Imm (BigInt.fromInt 0)
 
 nextLabel :: String -> CodegenState -> Tuple CodegenState String
 nextLabel prefix state =
@@ -106,7 +106,7 @@ copyBytesToReg src_val dst_reg byte_count =
         offsetSrc <- addOffset i src_val
         let mv = Mov Byte offsetSrc (Reg dst_reg)
         if i == 0 then Right (mv : Nil)
-        else Right (mv : Binary { op: Shl, t: Quadword, src: Imm 8, dst: Reg dst_reg } : Nil)
+        else Right (mv : Binary { op: Shl, t: Quadword, src: Imm (BigInt.fromInt 8), dst: Reg dst_reg } : Nil)
       byte_counts = reverse (List.range 0 (byte_count - 1))
   in map concat (resultTraverse copy_byte byte_counts)
 
@@ -116,18 +116,18 @@ copyBytesFromReg src_reg dst_val byte_count =
         offsetDst <- addOffset i dst_val
         let mv = Mov Byte (Reg src_reg) offsetDst
         if i < byte_count - 1 then
-          Right (mv : Binary { op: ShrBinop, t: Quadword, src: Imm 8, dst: Reg src_reg } : Nil)
+          Right (mv : Binary { op: ShrBinop, t: Quadword, src: Imm (BigInt.fromInt 8), dst: Reg src_reg } : Nil)
         else Right (mv : Nil)
   in map concat (resultTraverse copy_byte (List.range 0 (byte_count - 1)))
 
 convertVal :: CodegenState -> TackyVal -> Either CompilerError (Tuple CodegenState AsmOperand)
 convertVal state = case _ of
-  Constant (Const.ConstChar c) -> Right (Tuple state (Imm c))
-  Constant (Const.ConstUChar uc) -> Right (Tuple state (Imm uc))
-  Constant (Const.ConstInt i) -> Right (Tuple state (Imm i))
-  Constant (Const.ConstLong l) -> Right (Tuple state (Imm (bigIntToInt l)))
-  Constant (Const.ConstUInt u) -> Right (Tuple state (Imm (bigIntToInt u)))
-  Constant (Const.ConstULong ul) -> Right (Tuple state (Imm (bigIntToInt ul)))
+  Constant (Const.ConstChar c) -> Right (Tuple state (Imm (BigInt.fromInt c)))
+  Constant (Const.ConstUChar uc) -> Right (Tuple state (Imm (BigInt.fromInt uc)))
+  Constant (Const.ConstInt i) -> Right (Tuple state (Imm (BigInt.fromInt i)))
+  Constant (Const.ConstLong l) -> Right (Tuple state (Imm l))
+  Constant (Const.ConstUInt u) -> Right (Tuple state (Imm u))
+  Constant (Const.ConstULong ul) -> Right (Tuple state (Imm ul))
   Constant (Const.ConstDouble d) ->
     let Tuple state' name = addConstant Nothing d state
     in Right (Tuple state' (Data name 0))
@@ -380,7 +380,7 @@ convertFunctionCall state f args dst = do
   let stack_padding = if length stack_args `mod` 2 == 0 then 0 else 8
   let alignment_instruction =
         if stack_padding == 0 then Nil
-        else Binary { op: Sub, t: Quadword, src: Imm stack_padding, dst: Reg SP } : Nil
+        else Binary { op: Sub, t: Quadword, src: Imm (BigInt.fromInt stack_padding), dst: Reg SP } : Nil
 
   let instructions = load_dst_instruction <> alignment_instruction
 
@@ -414,7 +414,7 @@ convertFunctionCall state f args dst = do
         _ | isImmOrReg arg -> Right (Push arg : Nil)
         ByteArray { size } -> do
           copyInstrs <- copyBytes arg (Memory SP 0) size
-          Right (Binary { op: Sub, t: Quadword, src: Imm 8, dst: Reg SP } : copyInstrs)
+          Right (Binary { op: Sub, t: Quadword, src: Imm (BigInt.fromInt 8), dst: Reg SP } : copyInstrs)
         _ -> Right (Mov arg_t arg (Reg AX) : Push (Reg AX) : Nil)
     ) stack_args
 
@@ -424,7 +424,7 @@ convertFunctionCall state f args dst = do
   let bytes_to_remove = (8 * length stack_args) + stack_padding
   let dealloc =
         if bytes_to_remove == 0 then Nil
-        else Binary { op: Add, t: Quadword, src: Imm bytes_to_remove, dst: Reg SP } : Nil
+        else Binary { op: Add, t: Quadword, src: Imm (BigInt.fromInt bytes_to_remove), dst: Reg SP } : Nil
 
   let instructions6 = instructions5 <> dealloc
 
@@ -733,7 +733,7 @@ convertInstruction state = case _ of
         : Mov Quadword asm_src r1
         : Mov Quadword r1 r2
         : Unary Shr Quadword r2
-        : Binary { op: And, t: Quadword, src: Imm 1, dst: r1 }
+        : Binary { op: And, t: Quadword, src: Imm (BigInt.fromInt 1), dst: r1 }
         : Binary { op: Or, t: Quadword, src: r1, dst: r2 }
         : Cvtsi2sd Quadword r2 asm_dst
         : Binary { op: Add, t: AsmDouble, src: asm_dst, dst: asm_dst }
@@ -755,7 +755,7 @@ convertInstruction state = case _ of
       let Tuple state3 out_of_bounds = nextLabel "dbl2ulong.oob" state''
       let Tuple state4 end_lbl = nextLabel "dbl2ulong.end" state3
       let Tuple state5 upper_bound = addConstant Nothing 9223372036854775808.0 state4
-      let upper_bound_as_int = Imm int64MinValue
+      let upper_bound_as_int = Imm (BigInt.fromInt int64MinValue)
       let r = Reg R9
       let x = Reg XMM7
       Right (Tuple state5
@@ -823,7 +823,7 @@ convertInstruction state = case _ of
       Right (Tuple state'''
         ( Mov Quadword asm_ptr (Reg R8)
         : Mov Quadword asm_index (Reg R9)
-        : Binary { op: Mult, t: Quadword, src: Imm scale, dst: Reg R9 }
+        : Binary { op: Mult, t: Quadword, src: Imm (BigInt.fromInt scale), dst: Reg R9 }
         : Lea (Indexed { baseReg: R8, index: R9, scale: 1 }) asm_dst
         : Nil))
 

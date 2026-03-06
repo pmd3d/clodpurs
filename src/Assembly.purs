@@ -2,6 +2,7 @@ module Assembly where
 
 import Prelude
 
+import Data.BigInt (BigInt)
 import Data.List (List)
 import Initializers (StaticInit)
 
@@ -78,7 +79,7 @@ instance showAsmReg :: Show AsmReg where
 type AsmIndexedOperand = { baseReg :: AsmReg, index :: AsmReg, scale :: Int }
 
 data AsmOperand
-  = Imm Int
+  = Imm BigInt
   | Reg AsmReg
   | Pseudo String
   | Memory AsmReg Int

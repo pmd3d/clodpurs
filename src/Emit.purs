@@ -141,7 +141,7 @@ showOperand platform asmSymbols t = case _ of
       Quadword -> showQuadwordReg r
       AsmDouble -> showDoubleReg r
       ByteArray _ -> Left (InternalError "can't store non-scalar operand in register")
-  Imm i -> Right ("$" <> show i)
+  Imm i -> Right ("$" <> BigInt.toString i)
   Memory r 0 -> do
     rStr <- showQuadwordReg r
     Right ("(" <> rStr <> ")")

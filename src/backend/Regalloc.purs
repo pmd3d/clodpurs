@@ -3,6 +3,7 @@ module Regalloc where
 import Prelude
 
 import Assembly (AsmInstruction(..), AsmOperand(..), AsmProgram(..), AsmReg(..), AsmTopLevel(..), AsmType(..))
+import Data.BigInt as BigInt
 import AssemblySymbols (AsmSymbolTableMap)
 import AssemblySymbols as AssemblySymbols
 import AsmCfg as AsmCfg
@@ -131,7 +132,7 @@ lookupNode graph nodeId =
 showOperand :: AsmOperand -> String
 showOperand (Reg r) = show r
 showOperand (Pseudo p) = "(Pseudo " <> p <> ")"
-showOperand (Imm i) = "(Imm " <> show i <> ")"
+showOperand (Imm i) = "(Imm " <> BigInt.toString i <> ")"
 showOperand (Memory r off) = "(Memory " <> show r <> " " <> show off <> ")"
 showOperand (Data s off) = "(Data " <> s <> " " <> show off <> ")"
 showOperand (PseudoMem s off) = "(PseudoMem " <> s <> " " <> show off <> ")"

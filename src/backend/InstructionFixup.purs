@@ -6,33 +6,35 @@ import Assembly (AsmBinaryOperator(..), AsmInstruction(..), AsmOperand(..), AsmP
 import AssemblySymbols (AsmSymbolTableMap)
 import AssemblySymbols as AssemblySymbols
 import CompilerError (CompilerError)
+import Data.BigInt as BigInt
+import Data.BigInt (BigInt)
 import Data.Either (Either(..))
-import Data.Int.Bits ((.&.))
 import Data.List (List(..), (:), concatMap, reverse)
 import Data.List as List
+import Data.Maybe (fromMaybe)
 import RegSet as RegSet
 import ResultUtil (resultTraverse)
 import Rounding as Rounding
 
-int32_max :: Int
-int32_max = 2147483647
+int32_max :: BigInt
+int32_max = BigInt.fromInt 2147483647
 
-int32_min :: Int
-int32_min = -2147483648
+int32_min :: BigInt
+int32_min = BigInt.fromInt (-2147483648)
 
-isLarge :: Int -> Boolean
+isLarge :: BigInt -> Boolean
 isLarge imm = imm > int32_max || imm < int32_min
 
--- 2^32 - 1, computed to avoid literal out-of-range error
-foreign import uint32_max :: Int
+uint32_max :: BigInt
+uint32_max = fromMaybe (BigInt.fromInt 0) (BigInt.fromString "4294967295")
 
-isLargerThanUint :: Int -> Boolean
+isLargerThanUint :: BigInt -> Boolean
 isLargerThanUint imm =
   -- use unsigned upper-bound for positives, signed 32-bit lower bound for negatives
   imm > uint32_max || imm < int32_min
 
-isLargerThanByte :: Int -> Boolean
-isLargerThanByte imm = imm >= 256 || imm < -128
+isLargerThanByte :: BigInt -> Boolean
+isLargerThanByte imm = imm >= BigInt.fromInt 256 || imm < BigInt.fromInt (-128)
 
 isConstant :: AsmOperand -> Boolean
 isConstant = case _ of
@@ -78,11 +80,11 @@ fixupInstruction callee_saved_regs = case _ of
   -- Moving a quadword-size constant with a longword operand size produces assembler warning
   Mov Longword (Imm i) dst | isLargerThanUint i ->
     -- reduce modulo 2^32 by zeroing out upper 32 bits
-    let reduced = i .&. uint32_max
+    let reduced = BigInt.and i uint32_max
     in Mov Longword (Imm reduced) dst : Nil
   -- Moving a longword-size constant with a byte operand size produces assembler warning
   Mov Byte (Imm i) dst | isLargerThanByte i ->
-    let reduced = if i >= 128 then i - 256 else i
+    let reduced = if i >= BigInt.fromInt 128 then i - BigInt.fromInt 256 else i
     in Mov Byte (Imm reduced) dst : Nil
   -- Movsx can't handle immediate source or memory dst
   Movsx { src_type, dst_type, src: src@(Imm _), dst } | isMemory dst ->
@@ -180,7 +182,7 @@ fixupInstruction callee_saved_regs = case _ of
   Cmp t src (Imm i) ->
     Mov t (Imm i) (Reg R11) : Cmp t src (Reg R11) : Nil
   Push (Reg r) | isXmm r ->
-    Binary { op: Sub, t: Quadword, src: Imm 8, dst: Reg SP }
+    Binary { op: Sub, t: Quadword, src: Imm (BigInt.fromInt 8), dst: Reg SP }
       : Mov AsmDouble (Reg r) (Memory SP 0)
       : Nil
   Push src@(Imm i) | isLarge i ->
@@ -209,7 +211,7 @@ emitStackAdjustment bytes_for_locals callee_saved_count =
       total_stack_bytes = callee_saved_bytes + bytes_for_locals
       adjusted_stack_bytes = Rounding.roundAwayFromZero 16 total_stack_bytes
       stack_adjustment = adjusted_stack_bytes - callee_saved_bytes
-  in Binary { op: Sub, t: Quadword, src: Imm stack_adjustment, dst: Reg SP }
+  in Binary { op: Sub, t: Quadword, src: Imm (BigInt.fromInt stack_adjustment), dst: Reg SP }
 
 fixupTl :: AsmSymbolTableMap -> AsmTopLevel -> Either CompilerError AsmTopLevel
 fixupTl asmSymbols = case _ of
