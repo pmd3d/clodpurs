@@ -10,12 +10,14 @@ import Data.Either (Either(..))
 import Data.Foldable (maximumBy)
 import Data.List (List(..))
 import Data.Maybe (Maybe(..))
-import Data.Number as Number
+import Data.Nullable (Nullable, toMaybe)
 import Data.String.CodeUnits as SCU
 import Data.String.Regex (Regex, match, regex)
 import Data.String.Regex.Flags (noFlags)
 import Partial.Unsafe (unsafeCrashWith)
 import Tokens (Token(..))
+
+foreign import parseDoubleImpl :: String -> Nullable Number
 
 type TokenDef =
   { re :: Regex
@@ -81,7 +83,7 @@ convertULong :: String -> Token
 convertULong s = ConstULong (unsafeParseBigInt (SCU.dropRight 2 s))
 
 convertDouble :: String -> Token
-convertDouble s = case Number.fromString s of
+convertDouble s = case toMaybe (parseDoubleImpl s) of
   Just n -> ConstDouble n
   Nothing -> unsafeCrashWith ("Failed to parse double: " <> s)
 
