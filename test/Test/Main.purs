@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude
 
+import Assembly (AsmInstruction(..), AsmOperand(..), AsmReg(..), AsmType(..))
 import Ast as Ast
 import Const as Const
 import Data.BigInt (BigInt, fromInt, fromString)
@@ -11,6 +12,7 @@ import Data.Maybe (Maybe(..), fromJust)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Aff (launchAff_)
+import InstructionFixup (fixupInstruction)
 import Lex as Lex
 import Parse as Parse
 import Partial.Unsafe (unsafePartial)
@@ -272,6 +274,12 @@ main = launchAff_ $ runSpec [ consoleReporter ] do
     it "double to uchar" do
       let result = unwrap (ConstConvert.constConvert Types.UChar (Const.ConstDouble 250.1234))
       result `shouldEqual` Const.ConstUChar 250
+
+  describe "InstructionFixup" do
+    it "truncates large byte immediate to signed byte" do
+      let result = fixupInstruction Nil (Mov Byte (Imm (unsafeBigInt "5369233654")) (Reg AX))
+          expected = Mov Byte (Imm (fromInt (-10))) (Reg AX) : Nil
+      (result == expected) `shouldEqual` true
 
   TestUtil.spec
   TestInt8.spec

@@ -84,7 +84,8 @@ fixupInstruction callee_saved_regs = case _ of
     in Mov Longword (Imm reduced) dst : Nil
   -- Moving a longword-size constant with a byte operand size produces assembler warning
   Mov Byte (Imm i) dst | isLargerThanByte i ->
-    let reduced = if i >= BigInt.fromInt 128 then i - BigInt.fromInt 256 else i
+    let masked = BigInt.and i (BigInt.fromInt 255)
+        reduced = if masked >= BigInt.fromInt 128 then masked - BigInt.fromInt 256 else masked
     in Mov Byte (Imm reduced) dst : Nil
   -- Movsx can't handle immediate source or memory dst
   Movsx { src_type, dst_type, src: src@(Imm _), dst } | isMemory dst ->
